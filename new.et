@@ -1,0 +1,199 @@
+str;
+
+export {
+
+    of Int -> *String -> Int
+    fun main argc argv;
+
+    of Int -> *_ -> Int -> Int
+    @nomangle fun write fd buf count;
+
+    of Int -> *_ -> Int -> Int
+    @nomangle fun read fd buf count;
+
+    of String -> String
+    @nomangle fun getenv name;
+
+    of Int -> *_ -> Unit
+    @nomangle fun fd_clr fd fd_set;
+
+    of *_ -> Unit
+    @nomangle fun fd_zero fd_set;
+
+    of Int -> *_ -> Unit
+    @nomangle fun fd_set_ fd ptr;
+
+    of Int -> *_ -> Int
+    @nomangle fun fd_isset fd ptr;
+
+    of _ @nomangle fun etude_fd_zero ptr;
+    of _ @nomangle fun etude_fd_set fd ptr;
+
+    type C_timeval = struct {
+        tv_sec: Int,
+        tv_usec: Int,
+    };
+
+    of Int -> *_ -> *_ -> *_ -> *C_timeval
+    -> Int
+    @nomangle
+    fun select nfds readfds writefds exceptfds timeout;
+
+    of *_ -> Int
+    @nomangle fun fileno stream;
+
+    of String -> Int -> *_ -> String
+    @nomangle fun fgets s size stream;
+
+    of *_ -> *_ -> String -> String -> Int
+    @nomangle
+    fun etude_handle rd srv bufin bufout;
+
+
+    of Int -> *_ -> Int
+    @nomangle fun etude_fd_isset fd ptr;
+
+    of String -> Unit
+    @nomangle fun parsesrv cmd;
+
+    of String -> Unit
+    @nomangle fun parsein cmd;
+
+    of Int -> Unit
+    @nomangle fun ping faux;
+
+    of Int -> *_
+    @nomangle fun get_stdin faux;
+
+}
+
+fun etude_fd_zero ptr = fd_zero(ptr);
+fun etude_fd_set fd ptr = fd_set_(fd, ptr);
+fun etude_fd_isset fd ptr = fd_isset(fd, ptr);
+
+of *Str -> Unit
+fun skip_whitespace input = {
+    match *input->data {
+    | '\t': {}
+    | '\n': {}
+    |  ' ': {}
+    | other: { return; }
+    };
+    input->data = input->data + 1;
+    skip_whitespace(input);
+};
+
+type IrcdCommand = sum {
+    | join: struct {
+        channel: Str
+    }
+
+    | send: struct {
+        channel: Str,
+        message: Str,
+    }
+};
+
+type OpaqueCStruct = struct {};
+
+type IrcdSession = struct {
+    meta: struct {
+        host: String,
+        port: String,
+        nick: String,
+    },
+    bufin: String,
+    bufout: String,
+
+    serv_socket: *
+};
+
+of 
+fun join_channel name = {
+    match maybe_parse_word(string) {
+    | .none: { print("Could not parse channel name\n"); }
+    | .some channel: {
+
+
+};
+
+of String -> Maybe(IrcdCommand)
+fun send_message arguments = {
+    var string = mk_str(arguments);
+
+    match maybe_parse_word(string) {
+    | .none: { print("Could not parse channel name\n"); }
+    | .some channel: {
+
+        *string = cut_prefix(*string, channel.size);
+
+        skip_whitespace(string);
+
+        match maybe_parse_word(string) {
+        | .none: { print("Could not parse message\n"); }
+        | .some message: {
+            return .some.send { .channel = channel,
+                                .message = message };
+        }
+    }
+    }
+    .none
+};
+
+fun execute_command cmd = match cmd[0] {
+    | 'j': join_channel(skip_whitespace(cmd + 1)):
+    | 'm': send_message(skip_whitespace(cmd + 1));
+    | otherwise: {
+        print("Unexprected command: %c", otherwise);
+        assert(false);
+    }
+    };
+
+fun parsein input = {
+    var input = skip_whitespace(input);
+    match input[0] {
+    | '\0': return;
+    | ':': execute_command(input + 1);
+    };
+};
+
+fun etude_handle rd srv bufin bufout = {
+    fd_zero(rd);
+    fd_set_(0, rd);
+    fd_set_(fileno(srv), rd);
+
+    of C_timeval var tv = { .tv_sec = 120,
+                            .tv_usec = 0, };
+
+    var fd = fileno(srv) + 1;
+    var n = select(fd, rd, unit ~> String,
+                           unit ~> String, unit ~> *C_timeval);
+
+    if n < 0 {
+        print("Again %d\n", n);
+        return 0;
+    } else if n == 0 {
+        print("Ping");
+        ping(0);
+        return 0;
+    };
+
+    if fd_isset(fileno(srv), rd) != 0 {
+        print("Ping");
+        fgets(bufin, 4096, srv);
+        parsesrv(bufin);
+    };
+
+    if fd_isset(0, rd) != 0 {
+        fgets(bufin, 4096, get_stdin(0));
+        parsein(bufin);
+    };
+
+    0
+};
+
+fun main argc argv = {
+    etude_handle(new Int, new Int, "", "");
+    0
+};
+

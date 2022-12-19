@@ -1,0 +1,113 @@
+
+export {
+
+    of Int -> *String -> Int
+    fun main argc argv;
+
+    of Int -> *_ -> Int -> Int
+    @nomangle fun write fd buf count;
+
+    of Int -> *_ -> Int -> Int
+    @nomangle fun read fd buf count;
+
+    of String -> String
+    @nomangle fun getenv name;
+
+    of Int -> *_ -> Unit
+    @nomangle fun fd_clr fd fd_set;
+
+    of *_ -> Unit
+    @nomangle fun fd_zero fd_set;
+
+    of Int -> *_ -> Unit
+    @nomangle fun fd_set_ fd ptr;
+
+    of Int -> *_ -> Int
+    @nomangle fun fd_isset fd ptr;
+
+    of _ @nomangle fun etude_fd_zero ptr;
+    of _ @nomangle fun etude_fd_set fd ptr;
+
+    type C_timeval = struct {
+        tv_sec: Int,
+        tv_usec: Int,
+    };
+
+    of Int -> *_ -> *_ -> *_ -> *C_timeval
+    -> Int
+    @nomangle
+    fun select nfds readfds writefds exceptfds timeout;
+
+    of *_ -> Int
+    @nomangle fun fileno stream;
+
+    of String -> Int -> *_ -> String
+    @nomangle fun fgets s size stream;
+
+    of *_ -> *_ -> String -> String -> Int
+    @nomangle
+    fun etude_handle rd srv bufin bufout;
+
+
+    of Int -> *_ -> Int
+    @nomangle fun etude_fd_isset fd ptr;
+
+    of String -> Unit
+    @nomangle fun parsesrv cmd;
+
+    of String -> Unit
+    @nomangle fun parsein cmd;
+
+    of Int -> Unit
+    @nomangle fun ping faux;
+
+    of Int -> *_
+    @nomangle fun get_stdin faux;
+
+}
+
+fun etude_fd_zero ptr = fd_zero(ptr);
+fun etude_fd_set fd ptr = fd_set_(fd, ptr);
+fun etude_fd_isset fd ptr = fd_isset(fd, ptr);
+
+
+fun etude_handle rd srv bufin bufout = {
+    fd_zero(rd);
+    fd_set_(0, rd);
+    fd_set_(fileno(srv), rd);
+
+    of C_timeval var tv = { .tv_sec = 120,
+                            .tv_usec = 0, };
+
+    var fd = fileno(srv) + 1;
+    var n = select(fd, rd, unit ~> String,
+                       unit ~> String, unit ~> _);
+
+    if n < 0 {
+        print("Again %d\n", n);
+        return 0;
+    } else if n == 0 {
+        print("Ping");
+        ping(0);
+        return 0;
+    };
+
+    if fd_isset(fileno(srv), rd) != 0 {
+        print("Ping");
+        fgets(bufin, 4096, srv);
+        parsesrv(bufin);
+    };
+
+    if fd_isset(0, rd) != 0 {
+        fgets(bufin, 4096, get_stdin(0));
+        parsein(bufin);
+    };
+
+    0
+};
+
+fun main argc argv = {
+    etude_handle(new Int, new Int, "", "");
+    0
+};
+
