@@ -5,15 +5,6 @@ export {
     of Int -> *String -> Int
     fun main argc argv;
 
-    of Int -> *_ -> Int -> Int
-    @nomangle fun write fd buf count;
-
-    of Int -> *_ -> Int -> Int
-    @nomangle fun read fd buf count;
-
-    of String -> String
-    @nomangle fun getenv name;
-
     of Int -> *_ -> Unit
     @nomangle fun fd_clr fd fd_set;
 
@@ -26,32 +17,11 @@ export {
     of Int -> *_ -> Int
     @nomangle fun fd_isset fd ptr;
 
-    of _ @nomangle fun etude_fd_zero ptr;
-    of _ @nomangle fun etude_fd_set fd ptr;
-
-    type C_timeval = struct {
-        tv_sec: Int,
-        tv_usec: Int,
-    };
-
-    of Int -> *_ -> *_ -> *_ -> *C_timeval
-    -> Int
-    @nomangle
-    fun select nfds readfds writefds exceptfds timeout;
-
-    of *_ -> Int
-    @nomangle fun fileno stream;
-
-    of String -> Int -> *_ -> String
-    @nomangle fun fgets s size stream;
 
     of *_ -> *_ -> String -> String -> Int
     @nomangle
     fun etude_handle rd srv bufin bufout;
 
-
-    of Int -> *_ -> Int
-    @nomangle fun etude_fd_isset fd ptr;
 
     of String -> Unit
     @nomangle fun parsesrv cmd;
@@ -66,10 +36,6 @@ export {
     @nomangle fun get_stdin faux;
 
 }
-
-fun etude_fd_zero ptr = fd_zero(ptr);
-fun etude_fd_set fd ptr = fd_set_(fd, ptr);
-fun etude_fd_isset fd ptr = fd_isset(fd, ptr);
 
 of *Str -> Unit
 fun skip_whitespace input = {

@@ -87,15 +87,14 @@ fun etude_handle rd srv bufin bufout = {
         print("Again %d\n", n);
         return 0;
     } else if n == 0 {
-        print("Ping");
         ping(0);
         return 0;
     };
 
     if fd_isset(fileno(srv), rd) != 0 {
-        print("Ping");
         fgets(bufin, 4096, srv);
-        parsesrv(bufin);
+        print("%s\n", bufin);
+        # parsesrv(bufin);
     };
 
     if fd_isset(0, rd) != 0 {

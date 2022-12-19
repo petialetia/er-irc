@@ -1,186 +1,307 @@
 .text
-.globl etude_handle
-etude_handle:
+.globl send_messagef3IrcdSessionPcPc
+send_messagef3IrcdSessionPcPc:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $24, %rsp
+	subq $8, %rsp
+	pushq %rbx
+	movq %rsi, %rbx
+	movq %rdi, %rdx
+	movq 56(%rbp), %rdi
+	leaq strdata.0(%rip), %rsi
+	callq fprintf
+	movq %rbx, %rdx
+	movq 56(%rbp), %rdi
+	leaq strdata.1(%rip), %rsi
+	callq fprintf
+	popq %rbx
+	leave
+	ret
+.type send_messagef3IrcdSessionPcPc, @function
+.size send_messagef3IrcdSessionPcPc, .-send_messagef3IrcdSessionPcPc
+/* end function send_messagef3IrcdSessionPcPc */
+
+.text
+.globl join_channelf2IrcdSessionPc
+join_channelf2IrcdSessionPc:
+	pushq %rbp
+	movq %rsp, %rbp
+	movq %rdi, %rdx
+	movq 56(%rbp), %rdi
+	leaq strdata.2(%rip), %rsi
+	callq fprintf
+	leave
+	ret
+.type join_channelf2IrcdSessionPc, @function
+.size join_channelf2IrcdSessionPc, .-join_channelf2IrcdSessionPc
+/* end function join_channelf2IrcdSessionPc */
+
+.text
+.globl register_userf1IrcdSession
+register_userf1IrcdSession:
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $40, %rsp
 	pushq %rbx
 	pushq %r12
 	pushq %r13
-	movq %rsi, %r13
-	movq %rdi, %r12
-	movq %rdx, %rdi
-	movq %rdi, %rbx
-	movq %r12, %rdi
-	callq fd_zero
-	movq %r12, %rsi
-	movq %rbx, %rdi
-	movq %rsi, %r12
-	movq %rdi, %rbx
-	movl $0, %edi
-	callq fd_set_
-	movq %rbx, %rdi
-	movq %rdi, %rbx
-	movq %r13, %rdi
-	callq fileno
-	movq %r12, %rsi
-	movl %eax, %edi
-	movq %rsi, %r12
-	callq fd_set_
-	movq %rbx, %rdi
-	movl $120, -8(%rbp)
-	movl $0, -4(%rbp)
-	movq %rdi, %rbx
-	movq %r13, %rdi
-	callq fileno
-	movq %r13, %rdx
-	movq %r12, %rsi
-	movq %rbx, %rdi
-	movq %rdi, %rbx
-	movl %eax, %edi
-	addl $1, %edi
-	movl $0, %r8d
-	movl $0, %ecx
+	movq 56(%rbp), %rdi
+	movq %rdi, -24(%rbp)
+	movq 32(%rbp), %r12
+	movq %r12, -16(%rbp)
+	movq 16(%rbp), %rdx
+	movq %rdx, -8(%rbp)
 	movq %rdx, %r13
-	movl $0, %edx
-	movq %rsi, %r12
-	callq select
-	movq %rbx, %rdi
-	movl %eax, %esi
-	cmpl $0, %esi
-	jl .Lbb9
-	cmpl $0, %esi
-	jz .Lbb8
+	movq %r12, %rdx
+	leaq strdata.3(%rip), %rsi
 	movq %rdi, %rbx
-	movq %r13, %rdi
-	callq fileno
-	movq %r12, %rsi
-	movl %eax, %edi
-	movq %rsi, %r12
-	callq fd_isset
-	movq %rbx, %rdi
-	cmpl $0, %eax
-	jnz .Lbb4
-	movq %r12, %rsi
-	jmp .Lbb5
-.Lbb4:
-	movq %rdi, %rbx
-	leaq strdata.2(%rip), %rdi
-	movl $0, %eax
-	callq printf
+	callq fprintf
 	movq %r13, %rdx
-	movq %r12, %rsi
 	movq %rbx, %rdi
-	movq %rsi, %r12
-	movl $4096, %esi
+	movq %rdx, %r13
+	movq %r12, %rdx
+	leaq strdata.4(%rip), %rsi
 	movq %rdi, %rbx
-	callq fgets
+	callq fprintf
+	movq %r13, %rdx
 	movq %rbx, %rdi
+	leaq strdata.5(%rip), %rsi
 	movq %rdi, %rbx
-	callq parsesrv
-	movq %r12, %rsi
+	callq fprintf
+	movq %r12, %rdx
 	movq %rbx, %rdi
-.Lbb5:
-	movq %rdi, %rbx
-	movl $0, %edi
-	callq fd_isset
-	movq %rbx, %rdi
-	cmpl $0, %eax
-	jz .Lbb7
-	movq %rdi, %rbx
-	movl $0, %edi
-	callq get_stdin
-	movq %rbx, %rdi
-	movq %rax, %rdx
-	movl $4096, %esi
-	movq %rdi, %rbx
-	callq fgets
-	movq %rbx, %rdi
-	callq parsein
-.Lbb7:
-	movl $0, %eax
-	jmp .Lbb10
-.Lbb8:
-	leaq strdata.1(%rip), %rdi
-	movl $0, %eax
-	callq printf
-	movl $0, %edi
-	callq ping
-	movl $0, %eax
-	jmp .Lbb10
-.Lbb9:
-	leaq strdata.0(%rip), %rdi
-	movl $0, %eax
-	callq printf
-	movl $0, %eax
-.Lbb10:
+	leaq strdata.6(%rip), %rsi
+	callq fprintf
 	popq %r13
 	popq %r12
 	popq %rbx
 	leave
 	ret
-.type etude_handle, @function
-.size etude_handle, .-etude_handle
-/* end function etude_handle */
+.type register_userf1IrcdSession, @function
+.size register_userf1IrcdSession, .-register_userf1IrcdSession
+/* end function register_userf1IrcdSession */
 
 .text
-.globl mainf2iPPc
-mainf2iPPc:
+.globl init_sessionf1Pc
+init_sessionf1Pc:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $8, %rsp
+	subq $56, %rsp
 	pushq %rbx
-	movl $4, %edi
+	movq %rdi, %rax
+	leaq strdata.7(%rip), %rcx
+	movq %rcx, -48(%rbp)
+	movq %rax, %rbx
+	leaq strdata.8(%rip), %rax
+	movq %rax, -40(%rbp)
+	movq %rsi, -32(%rbp)
+	movl $32768, %edi
 	callq malloc
-	movq %rax, %rdi
-	movq %rdi, %rbx
-	movl $4, %edi
+	movq %rax, -24(%rbp)
+	movl $32768, %edi
 	callq malloc
-	movq %rbx, %rdi
-	movq %rax, %rsi
-	leaq strdata.4(%rip), %rcx
-	leaq strdata.3(%rip), %rdx
-	callq etude_handle
-	movl $0, %eax
+	movq %rax, -16(%rbp)
+	leaq strdata.8(%rip), %rsi
+	leaq strdata.7(%rip), %rdi
+	callq dial
+	movl %eax, %edi
+	leaq strdata.9(%rip), %rsi
+	callq fdopen
+	movq %rax, %rcx
+	movq %rbx, %rax
+	movq %rcx, -8(%rbp)
+	movq -8(%rbp), %rcx
+	movq %rcx, 40(%rax)
+	movq -16(%rbp), %rcx
+	movq %rcx, 32(%rax)
+	movq -24(%rbp), %rcx
+	movq %rcx, 24(%rax)
+	movq -32(%rbp), %rcx
+	movq %rcx, 16(%rax)
+	movq -40(%rbp), %rcx
+	movq %rcx, 8(%rax)
+	movq -48(%rbp), %rcx
+	movq %rcx, 0(%rax)
 	popq %rbx
 	leave
 	ret
-.type mainf2iPPc, @function
-.size mainf2iPPc, .-mainf2iPPc
-/* end function mainf2iPPc */
+.type init_sessionf1Pc, @function
+.size init_sessionf1Pc, .-init_sessionf1Pc
+/* end function init_sessionf1Pc */
+
+.text
+.globl main
+main:
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $96, %rsp
+	movq 8(%rsi), %rsi
+	leaq -96(%rbp), %rdi
+	callq init_sessionf1Pc
+	movq (%rax), %rcx
+	movq %rcx, -48(%rbp)
+	movq 8(%rax), %rcx
+	movq %rcx, -40(%rbp)
+	movq 16(%rax), %rcx
+	movq %rcx, -32(%rbp)
+	movq 24(%rax), %rcx
+	movq %rcx, -24(%rbp)
+	movq 32(%rax), %rcx
+	movq %rcx, -16(%rbp)
+	movq 40(%rax), %rax
+	movq %rax, -8(%rbp)
+	movl $2, %edi
+	callq sleep
+	subq $48, %rsp
+	movq %rsp, %rcx
+	movq -8(%rbp), %rax
+	movq %rax, 40(%rcx)
+	movq -16(%rbp), %rax
+	movq %rax, 32(%rcx)
+	movq -24(%rbp), %rax
+	movq %rax, 24(%rcx)
+	movq -32(%rbp), %rax
+	movq %rax, 16(%rcx)
+	movq -40(%rbp), %rax
+	movq %rax, 8(%rcx)
+	movq -48(%rbp), %rax
+	movq %rax, 0(%rcx)
+	callq register_userf1IrcdSession
+	subq $-48, %rsp
+	movl $2, %edi
+	callq sleep
+	subq $48, %rsp
+	movq %rsp, %rcx
+	movq -8(%rbp), %rax
+	movq %rax, 40(%rcx)
+	movq -16(%rbp), %rax
+	movq %rax, 32(%rcx)
+	movq -24(%rbp), %rax
+	movq %rax, 24(%rcx)
+	movq -32(%rbp), %rax
+	movq %rax, 16(%rcx)
+	movq -40(%rbp), %rax
+	movq %rax, 8(%rcx)
+	movq -48(%rbp), %rax
+	movq %rax, 0(%rcx)
+	leaq strdata.10(%rip), %rdi
+	callq join_channelf2IrcdSessionPc
+	subq $-48, %rsp
+	movl $2, %edi
+	callq sleep
+	subq $48, %rsp
+	movq %rsp, %rcx
+	movq -8(%rbp), %rax
+	movq %rax, 40(%rcx)
+	movq -16(%rbp), %rax
+	movq %rax, 32(%rcx)
+	movq -24(%rbp), %rax
+	movq %rax, 24(%rcx)
+	movq -32(%rbp), %rax
+	movq %rax, 16(%rcx)
+	movq -40(%rbp), %rax
+	movq %rax, 8(%rcx)
+	movq -48(%rbp), %rax
+	movq %rax, 0(%rcx)
+	leaq strdata.12(%rip), %rsi
+	leaq strdata.11(%rip), %rdi
+	callq send_messagef3IrcdSessionPcPc
+	subq $-48, %rsp
+	movl $0, %eax
+	leave
+	ret
+.type main, @function
+.size main, .-main
+/* end function main */
 
 .data
 .balign 8
 strdata.0:
-	.ascii "Again %d\n"
+	.ascii "PRIVMSG %s "
 	.byte 0
 /* end data */
 
 .data
 .balign 8
 strdata.1:
-	.ascii "Ping"
+	.ascii ":%s\r\n"
 	.byte 0
 /* end data */
 
 .data
 .balign 8
 strdata.2:
-	.ascii "Ping"
+	.ascii "JOIN %s\r\n "
 	.byte 0
 /* end data */
 
 .data
 .balign 8
 strdata.3:
-	.ascii ""
+	.ascii "NICK %s\r\n"
 	.byte 0
 /* end data */
 
 .data
 .balign 8
 strdata.4:
-	.ascii ""
+	.ascii "USER %s "
+	.byte 0
+/* end data */
+
+.data
+.balign 8
+strdata.5:
+	.ascii "localhost %s "
+	.byte 0
+/* end data */
+
+.data
+.balign 8
+strdata.6:
+	.ascii ":%s\r\n"
+	.byte 0
+/* end data */
+
+.data
+.balign 8
+strdata.7:
+	.ascii "irc.oftc.net"
+	.byte 0
+/* end data */
+
+.data
+.balign 8
+strdata.8:
+	.ascii "6667"
+	.byte 0
+/* end data */
+
+.data
+.balign 8
+strdata.9:
+	.ascii "r+"
+	.byte 0
+/* end data */
+
+.data
+.balign 8
+strdata.10:
+	.ascii "#etudetest"
+	.byte 0
+/* end data */
+
+.data
+.balign 8
+strdata.11:
+	.ascii "#etudetest"
+	.byte 0
+/* end data */
+
+.data
+.balign 8
+strdata.12:
+	.ascii "Hello world"
 	.byte 0
 /* end data */
 

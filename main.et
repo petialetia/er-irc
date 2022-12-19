@@ -1,113 +1,93 @@
+sys;
 
 export {
 
     of Int -> *String -> Int
-    fun main argc argv;
+    @nomangle fun main argc argv;
 
-    of Int -> *_ -> Int -> Int
-    @nomangle fun write fd buf count;
+    of *C_FILE -> String -> _ -> Int
+    @nomangle fun fprintf stream format;
 
-    of Int -> *_ -> Int -> Int
-    @nomangle fun read fd buf count;
+    of String -> String -> Int
+    @nomangle fun dial host port;
 
-    of String -> String
-    @nomangle fun getenv name;
-
-    of Int -> *_ -> Unit
-    @nomangle fun fd_clr fd fd_set;
-
-    of *_ -> Unit
-    @nomangle fun fd_zero fd_set;
-
-    of Int -> *_ -> Unit
-    @nomangle fun fd_set_ fd ptr;
-
-    of Int -> *_ -> Int
-    @nomangle fun fd_isset fd ptr;
-
-    of _ @nomangle fun etude_fd_zero ptr;
-    of _ @nomangle fun etude_fd_set fd ptr;
-
-    type C_timeval = struct {
-        tv_sec: Int,
-        tv_usec: Int,
-    };
-
-    of Int -> *_ -> *_ -> *_ -> *C_timeval
-    -> Int
-    @nomangle
-    fun select nfds readfds writefds exceptfds timeout;
-
-    of *_ -> Int
-    @nomangle fun fileno stream;
-
-    of String -> Int -> *_ -> String
-    @nomangle fun fgets s size stream;
-
-    of *_ -> *_ -> String -> String -> Int
-    @nomangle
-    fun etude_handle rd srv bufin bufout;
-
-
-    of Int -> *_ -> Int
-    @nomangle fun etude_fd_isset fd ptr;
-
-    of String -> Unit
-    @nomangle fun parsesrv cmd;
-
-    of String -> Unit
-    @nomangle fun parsein cmd;
-
-    of Int -> Unit
-    @nomangle fun ping faux;
-
-    of Int -> *_
-    @nomangle fun get_stdin faux;
+    of *C_FILE -> Int
+    @nomangle fun fflush stream;
 
 }
 
-fun etude_fd_zero ptr = fd_zero(ptr);
-fun etude_fd_set fd ptr = fd_set_(fd, ptr);
-fun etude_fd_isset fd ptr = fd_isset(fd, ptr);
+type IrcdSession = struct {
+    meta: struct {
+        host: String,
+        port: String,
+        nick: String,
+    },
+    bufin: String,
+    bufout: String,
+
+    serv_stream: *C_FILE,
+};
+
+of String -> IrcdSession
+fun init_session nick = {
+    var ircd_url = "irc.oftc.net";
+    var ircd_port = "6667";
+
+    { .meta = { .host = ircd_url,
+                .port = ircd_port,
+                .nick = nick },
+      .bufin = (new [4096] Char) ~> _,
+      .bufout = (new [4096] Char) ~> _,
+      .serv_stream = fdopen(dial(ircd_url, ircd_port), "r+"),
+    }
+};
+
+of IrcdSession -> Int
+fun server_write session =
+    fprintf(session.serv_stream, "%s\r\n", session.bufout);
 
 
-fun etude_handle rd srv bufin bufout = {
-    fd_zero(rd);
-    fd_set_(0, rd);
-    fd_set_(fileno(srv), rd);
+of IrcdSession -> Unit
+fun register_user session = {
+    var stream = session.serv_stream;
+    var nick = session.meta.nick;
+    var host = session.meta.host;
 
-    of C_timeval var tv = { .tv_sec = 120,
-                            .tv_usec = 0, };
+    fprintf(stream, "NICK %s\r\n", nick);
+    fprintf(stream, "USER %s ", nick);
+    fprintf(stream, "localhost %s ", host);
+    fprintf(stream, ":%s\r\n", nick);
+};
 
-    var fd = fileno(srv) + 1;
-    var n = select(fd, rd, unit ~> String,
-                       unit ~> String, unit ~> _);
+of IrcdSession -> String -> String -> Unit
+fun send_message sess channel msg = {
+    fprintf(sess.serv_stream, "PRIVMSG %s ", channel);
+    fprintf(sess.serv_stream, ":%s\r\n", msg);
+};
 
-    if n < 0 {
-        print("Again %d\n", n);
-        return 0;
-    } else if n == 0 {
-        print("Ping");
-        ping(0);
-        return 0;
-    };
-
-    if fd_isset(fileno(srv), rd) != 0 {
-        print("Ping");
-        fgets(bufin, 4096, srv);
-        parsesrv(bufin);
-    };
-
-    if fd_isset(0, rd) != 0 {
-        fgets(bufin, 4096, get_stdin(0));
-        parsein(bufin);
-    };
-
-    0
+of IrcdSession -> String -> Unit
+fun join_channel sess channel = {
+    fprintf(sess.serv_stream, "JOIN %s\r\n ", channel);
 };
 
 fun main argc argv = {
-    etude_handle(new Int, new Int, "", "");
+
+    var sess = init_session(argv[1]);
+
+    sleep(2);
+
+    register_user(sess);
+
+    sleep(2);
+
+    join_channel(sess, "#etudetest");
+
+    sleep(2);
+
+    send_message(sess, "#etudetest", "Hello world");
+
+    # loop(&sess);
+
     0
 };
 
