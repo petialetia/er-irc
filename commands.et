@@ -51,10 +51,14 @@ export {
 
 
 fun print_command cmd = match cmd {
-    | .join d: print("- Request JOIN %s\n", to_zero_terminated(d.channel))
+    | .join d: 
+        print("- Request JOIN %s\n", 
+            to_zero_terminated(d.channel))
 
-    | .send d: print("- Request SEND '%s' to %s\n",
-        to_zero_terminated(d.message), to_zero_terminated(d.channel))
+    | .send d: 
+        print("- Request SEND '%s' to %s\n",
+            to_zero_terminated(d.message), 
+            to_zero_terminated(d.channel))
     };
 
 
@@ -176,6 +180,17 @@ fun parseout input = {
             parse_join(content, nick);
     };
 
+    # :username!~host.name PING ...
+    # Note: need to answer PONG
+    if starts_with(content.data, "QUIT") {
+        return .some.leave.nick nick;
+    };
+
+
+    if starts_with(content.data, "PING") {
+        return .some.ping;
+    };
+
     (.none)
 };
 
@@ -183,26 +198,28 @@ fun parseout input = {
 fun print_message msg = match msg {
     | .ping: print("PING\n")
 
+    | .leave l: print("QUIT %s\n", to_zero_terminated(l.nick),)
+
     | .join j: print("JOIN { user: @%s, chan: #%s }\n",
-        to_zero_terminated(j.nick),
-        to_zero_terminated(j.chan),)
+            to_zero_terminated(j.nick),
+            to_zero_terminated(j.chan),)
 
     | .message m: print("MESSAGE (in #%s): @%s > %s\n",
-        to_zero_terminated(m.chan),
-        to_zero_terminated(m.nick),
-        to_zero_terminated(m.msg),)
+            to_zero_terminated(m.chan),
+            to_zero_terminated(m.nick),
+            to_zero_terminated(m.msg),)
     };
 
 # fun main argc argv = {
-# 
-# 
+#
+#
 #     var join = ":tester!~oftc@93.175.5.164 JOIN :#etude";
-# 
+#
 #     match parseout(join) {
 #     | .some msg: print_message(msg)
 #     | .none: print("Parsing join error!\n")
 #     };
-# 
+#
 #     var message = ":tester!~oftc@93.175.5.164 PRIVMSG #etude :Hello world?";
 # 
 #     match parseout(message) {

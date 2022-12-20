@@ -22,7 +22,9 @@ export {
 }
 
 
-of Str -> Char -> Int -> struct { before: Str, after: Str }
+of Str -> Char -> Int 
+-> struct { before: Str, after: Str }
+
 fun split_inner str ch len = if str.size == len then
         { .before = get_suffix(str, len), .after  = cut_prefix(str, len), }
     else if str.data[len] == ch then

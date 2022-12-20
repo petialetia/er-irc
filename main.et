@@ -59,9 +59,10 @@ fun init_session nick = {
       .serv_stream = fdopen(dial(ircd_url, ircd_port), "r+"), }
 };
 
-of IrcdSession -> Int
-fun server_write session =
-    fprintf(session.serv_stream, "%s\r\n", session.bufout);
+of *IrcdSession -> Unit 
+fun server_ping session = {
+    fprintf(session->serv_stream, "PONG %s\r\n", session->meta.host);
+};
 
 
 of IrcdSession -> Unit
@@ -131,6 +132,7 @@ fun etude_handle rd sess = {
         fgets(sess->bufin, 4096, srv);
         match parseout(sess->bufin) {
         | .some msg: print_message(msg)
+        | .some.ping: server_ping(sess)
         | .none: print("Error parsing '%s'\n", sess->bufin)
         };
     };
