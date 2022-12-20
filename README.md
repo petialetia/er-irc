@@ -11,13 +11,9 @@ found here: [sr.ht/~orazov_ae/etude](https://git.sr.ht/~orazov_ae/etude)
 ## Building from sources
 
 ```
-# From the project root
-etc old | qbe | as > qbeout.s
-gcc -S sic.c
-gcc sic.s qbeout.s
-./a.out -n etudetester
+make
 ```
 
-## Video demostration
-
+Guaranteed to work with the commit
+76b149989fe191c8314002f5af41847514f223de in the Etude compiler
 
