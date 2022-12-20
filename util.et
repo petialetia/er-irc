@@ -1,0 +1,31 @@
+
+export {
+
+    of *Str -> Unit
+    fun skip_whitespace input;
+
+
+    of Str -> Int -> Str
+    fun cut_and_skip str count;
+
+}
+
+
+fun skip_whitespace input = {
+    match *input->data {
+    | '\t': {}
+    | '\n': {}
+    |  ' ': {}
+    | other: { return; }
+    };
+    input->data = input->data + 1;
+    skip_whitespace(input);
+};
+
+
+fun cut_and_skip str count = {
+    var res = cut_prefix(str, count);
+    skip_whitespace(&res);
+    res
+};
+

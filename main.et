@@ -1,32 +1,54 @@
 sys;
 
+commands;
+
 export {
 
     of Int -> *String -> Int
     @nomangle fun main argc argv;
 
-    of *C_FILE -> String -> _ -> Int
-    @nomangle fun fprintf stream format;
+    type IrcdSession = struct {
+        meta: struct {
+            host: String,
+            port: String,
+            nick: String,
+        },
+        bufin: String,
+        bufout: String,
+
+        serv_stream: *C_FILE,
+    };
+
+    ##################################################################
 
     of String -> String -> Int
     @nomangle fun dial host port;
 
-    of *C_FILE -> Int
-    @nomangle fun fflush stream;
+    of *IrcdSession -> Unit
+    @nomangle fun loop session;
+
+    ##################################################################
+
+    type C_FD_SET = struct {
+    };
+
+    of *C_FD_SET -> Unit
+    @nomangle fun fd_zero fd_set;
+
+    of Int -> *C_FD_SET -> Unit
+    @nomangle fun fd_set_ fd ptr;
+
+    of Int -> *C_FD_SET -> Int
+    @nomangle fun fd_isset fd ptr;
+
+    ##################################################################
+
+
+    of *C_FD_SET -> *IrcdSession -> Int
+    @nomangle
+    fun etude_handle rd session;
 
 }
-
-type IrcdSession = struct {
-    meta: struct {
-        host: String,
-        port: String,
-        nick: String,
-    },
-    bufin: String,
-    bufout: String,
-
-    serv_stream: *C_FILE,
-};
 
 of String -> IrcdSession
 fun init_session nick = {
@@ -38,8 +60,7 @@ fun init_session nick = {
                 .nick = nick },
       .bufin = (new [4096] Char) ~> _,
       .bufout = (new [4096] Char) ~> _,
-      .serv_stream = fdopen(dial(ircd_url, ircd_port), "r+"),
-    }
+      .serv_stream = fdopen(dial(ircd_url, ircd_port), "r+"), }
 };
 
 of IrcdSession -> Int
@@ -53,40 +74,91 @@ fun register_user session = {
     var nick = session.meta.nick;
     var host = session.meta.host;
 
-    fprintf(stream, "NICK %s\r\n", nick);
-    fprintf(stream, "USER %s ", nick);
+    fprintf(stream, "NICK %s\r\n"  , nick);
+    fprintf(stream, "USER %s "     , nick);
     fprintf(stream, "localhost %s ", host);
-    fprintf(stream, ":%s\r\n", nick);
+    fprintf(stream, ":%s\r\n"      , nick);
+
+	fflush(stream);
+	setbuf(stream, unit ~> _);
+	# setbuf(stdout, NULL);
+	# setbuf(stdin, NULL);
 };
 
-of IrcdSession -> String -> String -> Unit
-fun send_message sess channel msg = {
-    fprintf(sess.serv_stream, "PRIVMSG %s ", channel);
-    fprintf(sess.serv_stream, ":%s\r\n", msg);
+of *IrcdSession -> Str -> Str -> Unit
+fun send_message sess chan msg = {
+    var stream = sess->serv_stream;
+    fprintf(stream, "PRIVMSG #%s ", to_zero_terminated(chan));
+    fprintf(stream, ":%s\r\n"    , to_zero_terminated(msg));
 };
 
-of IrcdSession -> String -> Unit
-fun join_channel sess channel = {
-    fprintf(sess.serv_stream, "JOIN %s\r\n ", channel);
+of *IrcdSession -> Str -> Unit
+fun join_channel sess chan = {
+    var stream = sess->serv_stream;
+    fprintf(stream, "JOIN #%s\r\n ", to_zero_terminated(chan));
 };
+
+of *IrcdSession -> IrcdCommand -> Unit
+fun execute_command sess cmd = match cmd {
+    | .join j: join_channel(sess, j.channel)
+    | .send s: send_message(sess, s.channel, s.message)
+    };
+
+
+fun etude_handle rd sess = {
+    var srv = sess->serv_stream;
+
+    fd_zero(rd);
+    fd_set_(0, rd);
+    fd_set_(fileno(srv), rd);
+
+    var fd = fileno(srv) + 1;
+    var n = select(fd, rd, unit ~> String,
+                           unit ~> String, unit ~> *C_timeval);
+
+    if n < 0 {
+        print("Retry select %d\n", n);
+        return 0;
+    };
+
+    if fd_isset(fileno(srv), rd) != 0 {
+        print("[!] Input from server: \n");
+        fgets(sess->bufin, 4096, srv);
+        print("%s\n" sess->bufin);
+    };
+
+    if fd_isset(0, rd) != 0 {
+        print("[!] Input from user: \n");
+        var stdin = fdopen(0, "r+");
+        fgets(sess->bufin, 4096, stdin);
+        match parsein(sess->bufin) {
+        | .some cmd: execute_command(sess, cmd)
+        | .none: unit
+        };
+    };
+
+    0
+};
+
 
 fun main argc argv = {
 
     var sess = init_session(argv[1]);
 
-    sleep(2);
-
     register_user(sess);
 
-    sleep(2);
+    sleep(1);
 
-    join_channel(sess, "#etudetest");
+    join_channel(&sess, mk_str("etudetest"));
 
-    sleep(2);
+    # send_message(sess, "#etudetest", "Hello world");
 
-    send_message(sess, "#etudetest", "Hello world");
+    loop(&sess);
 
-    # loop(&sess);
+    return 0;
+
+    # For gen
+    etude_handle(new _, new _);
 
     0
 };

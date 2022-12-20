@@ -1,0 +1,89 @@
+str;
+sys;
+parse;
+
+util;
+
+export {
+
+    type IrcdCommand = sum {
+        | join: struct {
+            channel: Str
+        }
+
+        | send: struct {
+            channel: Str,
+            message: Str,
+        }
+    };
+
+    of IrcdCommand -> Unit
+    fun print_command cmd;
+
+    of String -> Maybe(IrcdCommand)
+    @nomangle fun parsesrv buffer;
+
+    of String -> Maybe(IrcdCommand)
+    @nomangle fun parsein buffer;
+
+}
+
+
+
+of IrcdCommand -> Unit
+fun print_command cmd = match cmd {
+    | .join d: print("- Request JOIN %s\n", to_zero_terminated(d.channel))
+
+    | .send d: print("- Request SEND '%s' to %s\n",
+        to_zero_terminated(d.message), to_zero_terminated(d.channel))
+    };
+
+
+of Str -> Maybe(IrcdCommand)
+fun join_channel str = match maybe_parse_word(str) {
+    | .some word: .some.join.channel word
+    | .none: {
+        print("Could not parse channel name in %s\n",
+            to_zero_terminated(str));
+        .none
+    }
+    };
+
+
+of Str -> Maybe(IrcdCommand)
+fun send_message str = match maybe_parse_word(str) {
+    | .none: { print("Could not parse channel name\n"); .none }
+    | .some channel: {
+
+        str = cut_prefix(str, channel.size);
+
+        skip_whitespace(&str);
+
+        match maybe_parse_word(str) {
+        | .none: { print("Could not parse message\n"); .none }
+        | .some message: .some.send { .channel = channel,
+                                      .message = str }
+        }
+    }
+    };
+
+
+fun parsein input = {
+    print("Input string: '%s'\n", input);
+
+    of Str var str = mk_str(input);
+    skip_whitespace(&str);
+
+    match str.data[0] {
+    | ':': match str.data[1] {
+        | 'j': { return join_channel(cut_and_skip(str, 2)); }
+        | 'm': { return send_message(cut_and_skip(str, 2)); }
+        | otherwise: print("Unexprected command prefix: %c", str.data[1])
+        }
+    | otherwise: print("Could not recongnize input string %s",
+                     to_zero_terminated(str))
+    };
+
+    .none
+};
+
