@@ -29,9 +29,6 @@ export {
 
     ##################################################################
 
-    type C_FD_SET = struct {
-    };
-
     of *C_FD_SET -> Unit
     @nomangle fun fd_zero fd_set;
 
@@ -45,8 +42,7 @@ export {
 
 
     of *C_FD_SET -> *IrcdSession -> Int
-    @nomangle
-    fun etude_handle rd session;
+    @nomangle fun etude_handle rd session;
 
 }
 
@@ -79,11 +75,19 @@ fun register_user session = {
     fprintf(stream, "localhost %s ", host);
     fprintf(stream, ":%s\r\n"      , nick);
 
-	fflush(stream);
-	setbuf(stream, unit ~> _);
-	# setbuf(stdout, NULL);
-	# setbuf(stdin, NULL);
+    fflush(stream);
+
+    # Set IO unbuffered
+
+    setbuf(stream, unit ~> _);
+
+    var stdin = fdopen(0, "r+");
+    var stdout = fdopen(1, "r+");
+
+    setbuf(stdout, unit ~> _);
+    setbuf(stdin, unit ~> _);
 };
+
 
 of *IrcdSession -> Str -> Str -> Unit
 fun send_message sess chan msg = {
@@ -92,11 +96,13 @@ fun send_message sess chan msg = {
     fprintf(stream, ":%s\r\n"    , to_zero_terminated(msg));
 };
 
+
 of *IrcdSession -> Str -> Unit
 fun join_channel sess chan = {
     var stream = sess->serv_stream;
     fprintf(stream, "JOIN #%s\r\n ", to_zero_terminated(chan));
 };
+
 
 of *IrcdSession -> IrcdCommand -> Unit
 fun execute_command sess cmd = match cmd {
@@ -113,8 +119,8 @@ fun etude_handle rd sess = {
     fd_set_(fileno(srv), rd);
 
     var fd = fileno(srv) + 1;
-    var n = select(fd, rd, unit ~> String,
-                           unit ~> String, unit ~> *C_timeval);
+    var n = select(fd, rd, unit ~> _,
+                           unit ~> _, unit ~> _);
 
     if n < 0 {
         print("Retry select %d\n", n);
@@ -122,15 +128,18 @@ fun etude_handle rd sess = {
     };
 
     if fd_isset(fileno(srv), rd) != 0 {
-        print("[!] Input from server: \n");
         fgets(sess->bufin, 4096, srv);
-        print("%s\n" sess->bufin);
+        match parseout(sess->bufin) {
+        | .some msg: print_message(msg)
+        | .none: print("Error parsing '%s'\n", sess->bufin)
+        };
     };
 
     if fd_isset(0, rd) != 0 {
-        print("[!] Input from user: \n");
         var stdin = fdopen(0, "r+");
+
         fgets(sess->bufin, 4096, stdin);
+
         match parsein(sess->bufin) {
         | .some cmd: execute_command(sess, cmd)
         | .none: unit
@@ -149,13 +158,13 @@ fun main argc argv = {
 
     sleep(1);
 
-    join_channel(&sess, mk_str("etudetest"));
+    join_channel(&sess, mk_str("etude"));
 
     loop(&sess);
 
     return 0;
 
-    # For gen
+    # To enable codegen
     etude_handle(new _, new _);
 
     0

@@ -1,24 +1,56 @@
+str;
 
 export {
 
     of *Str -> Unit
     fun skip_whitespace input;
 
-
     of Str -> Int -> Str
     fun cut_and_skip str count;
+
+    of Str -> Char -> Int
+    -> struct { before: Str, after: Str }
+    fun skip_until_inner str ch len;
+
+    of Str -> Char
+    -> struct { before: Str, after: Str }
+    fun split str ch;
+
+    of String -> String -> Bool
+    fun starts_with str cliche;
 
 }
 
 
+of Str -> Char -> Int -> struct { before: Str, after: Str }
+fun split_inner str ch len = if str.size == len then
+        { .before = get_suffix(str, len), .after  = cut_prefix(str, len), }
+    else if str.data[len] == ch then
+        { .before = get_suffix(str, len), .after  = cut_prefix(str, len), }
+    else
+       split_inner(str, ch, len + 1)
+    ;
+
+
+fun split str ch = {
+    assert(str.size != -1);
+    split_inner(str, ch, 0)
+};
+
+
 fun skip_whitespace input = {
-    match *input->data {
-    | '\t': {}
-    | '\n': {}
+    if input->size == 0 { return; };
+
+    match input->data[0] {
     |  ' ': {}
+    | '\n': {}
+    | '\t': {}
     | other: { return; }
     };
+
     input->data = input->data + 1;
+    input->size = input->size - 1;
+
     skip_whitespace(input);
 };
 
@@ -28,4 +60,13 @@ fun cut_and_skip str count = {
     skip_whitespace(&res);
     res
 };
+
+
+fun starts_with str cliche = if str[0] != cliche[0] then
+        false
+    else if cliche[1] == '\0' then
+        true
+    else
+        starts_with(str + 1, cliche + 1)
+    ;
 

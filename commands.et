@@ -17,20 +17,39 @@ export {
         }
     };
 
+    of String -> Maybe(IrcdCommand)
+    fun parsein buffer;
+
+    type IrcMessage = sum {
+        | ping
+
+        | leave: struct { nick: Str, }
+
+        | join: struct {
+            nick: Str,
+            chan: Str,
+        }
+
+        | message: struct {
+            nick: Str,
+            chan: Str,
+            msg: Str,
+        }
+    };
+
+    of String -> Maybe(IrcMessage)
+    fun parseout input;
+
     of IrcdCommand -> Unit
     fun print_command cmd;
 
-    of String -> Maybe(IrcdCommand)
-    @nomangle fun parsesrv buffer;
-
-    of String -> Maybe(IrcdCommand)
-    @nomangle fun parsein buffer;
+    of IrcMessage -> Unit
+    fun print_message msg;
 
 }
 
 
 
-of IrcdCommand -> Unit
 fun print_command cmd = match cmd {
     | .join d: print("- Request JOIN %s\n", to_zero_terminated(d.channel))
 
@@ -87,3 +106,109 @@ fun parsein input = {
     .none
 };
 
+######################################################################
+
+
+of Str -> Str -> Maybe(IrcMessage)
+fun parse_join content nick = if content.data[0] != ':' then
+        (.none)
+    else if content.data[1] != '#' then
+        (.none)
+    else match maybe_parse_word(cut_prefix(content, 2)) {
+         | .some chan: .some.join { .nick = nick,
+                                    .chan = chan, }
+         | otherwise: (.none)
+         }
+    ;
+
+
+of Str -> Str -> Maybe(IrcMessage)
+fun parse_privmsg content nick = if content.data[0] != '#' {
+        print("Unknown chan or user starting from %s\n",
+                to_zero_terminated(content));
+        (.none)
+    } else match maybe_parse_word(cut_prefix(content, 1)) {
+           | .none: (.none)
+           | .some channel:
+               .some.message {
+                   .nick = nick,
+                   .chan = channel,
+
+                   # TODO: better
+                   # .msg = content |> cut_and_skip(channel.size + 1)
+                   #                |> cut_prefix(1)
+
+                   .msg = cut_prefix(cut_and_skip(content, channel.size + 1), 1),
+               }
+           };
+
+
+fun parseout input = {
+
+    of Str var str = mk_str(input);
+    skip_whitespace(&str);
+
+    var s = split(str, '!');
+    var nick = cut_prefix(s.before, 1);
+
+    var content = split(s.after, ' ').after;
+    skip_whitespace(&content);
+
+    # :username!~host.name PRIVMSG #chan message
+
+    if starts_with(content.data, "PRIVMSG") {
+        content = cut_and_skip(content, 7);
+
+        return if content.size <= 0 then
+            (.none)
+        else
+            parse_privmsg(content, nick);
+    };
+
+    # :username!~host.name JOIN :#chan
+
+    if starts_with(content.data, "JOIN") {
+        content = cut_and_skip(content, 4);
+
+        return if content.size <= 0 then
+            (.none)
+        else
+            parse_join(content, nick);
+    };
+
+    (.none)
+};
+
+
+fun print_message msg = match msg {
+    | .ping: print("PING\n")
+
+    | .join j: print("JOIN { user: @%s, chan: #%s }\n",
+        to_zero_terminated(j.nick),
+        to_zero_terminated(j.chan),)
+
+    | .message m: print("MESSAGE (in #%s): @%s > %s\n",
+        to_zero_terminated(m.chan),
+        to_zero_terminated(m.nick),
+        to_zero_terminated(m.msg),)
+    };
+
+# fun main argc argv = {
+# 
+# 
+#     var join = ":tester!~oftc@93.175.5.164 JOIN :#etude";
+# 
+#     match parseout(join) {
+#     | .some msg: print_message(msg)
+#     | .none: print("Parsing join error!\n")
+#     };
+# 
+#     var message = ":tester!~oftc@93.175.5.164 PRIVMSG #etude :Hello world?";
+# 
+#     match parseout(message) {
+#     | .some msg: print_message(msg)
+#     | .none: print("Parsing message error!\n")
+#     };
+# 
+#     0
+# };
