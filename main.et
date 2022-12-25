@@ -13,8 +13,8 @@ export {
             port: String,
             nick: String,
         },
+
         bufin: String,
-        bufout: String,
 
         serv_stream: *C_FILE,
     };
@@ -24,15 +24,15 @@ export {
     of String -> String -> Int
     @nomangle fun dial host port;
 
-    of *IrcdSession -> Unit
+    of *IrcdSession -> ()
     @nomangle fun loop session;
 
     ##################################################################
 
-    of *C_FD_SET -> Unit
+    of *C_FD_SET -> ()
     @nomangle fun fd_zero fd_set;
 
-    of Int -> *C_FD_SET -> Unit
+    of Int -> *C_FD_SET -> ()
     @nomangle fun fd_set_ fd ptr;
 
     of Int -> *C_FD_SET -> Int
@@ -54,18 +54,17 @@ fun init_session nick = {
     { .meta = { .host = ircd_url,
                 .port = ircd_port,
                 .nick = nick },
-      .bufin = (new [4096] Char) ~> _,
-      .bufout = (new [4096] Char) ~> _,
+      .bufin = new [4096] Char,
       .serv_stream = fdopen(dial(ircd_url, ircd_port), "r+"), }
 };
 
-of *IrcdSession -> Unit 
+of *IrcdSession -> ()
 fun server_ping session = {
     fprintf(session->serv_stream, "PONG %s\r\n", session->meta.host);
 };
 
 
-of IrcdSession -> Unit
+of IrcdSession -> ()
 fun register_user session = {
     var stream = session.serv_stream;
     var nick = session.meta.nick;
@@ -90,7 +89,7 @@ fun register_user session = {
 };
 
 
-of *IrcdSession -> Str -> Str -> Unit
+of *IrcdSession -> Str -> Str -> ()
 fun send_message sess chan msg = {
     var stream = sess->serv_stream;
     fprintf(stream, "PRIVMSG #%s ", to_zero_terminated(chan));
@@ -98,14 +97,14 @@ fun send_message sess chan msg = {
 };
 
 
-of *IrcdSession -> Str -> Unit
+of *IrcdSession -> Str -> ()
 fun join_channel sess chan = {
     var stream = sess->serv_stream;
     fprintf(stream, "JOIN #%s\r\n ", to_zero_terminated(chan));
 };
 
 
-of *IrcdSession -> IrcdCommand -> Unit
+of *IrcdSession -> IrcdCommand -> ()
 fun execute_command sess cmd = match cmd {
     | .join j: join_channel(sess, j.channel)
     | .send s: send_message(sess, s.channel, s.message)
@@ -130,9 +129,10 @@ fun etude_handle rd sess = {
 
     if fd_isset(fileno(srv), rd) != 0 {
         fgets(sess->bufin, 4096, srv);
+
         match parseout(sess->bufin) {
-        | .some msg: print_message(msg)
         | .some.ping: server_ping(sess)
+        | .some msg: print_message(msg)
         | .none: print("Error parsing '%s'\n", sess->bufin)
         };
     };
@@ -167,8 +167,6 @@ fun main argc argv = {
     return 0;
 
     # To enable codegen
-    etude_handle(new _, new _);
-
-    0
+    etude_handle(new _, new _)
 };
 

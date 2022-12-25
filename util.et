@@ -2,18 +2,13 @@ str;
 
 export {
 
-    of *Str -> Unit
+    of *Str -> ()
     fun skip_whitespace input;
 
     of Str -> Int -> Str
     fun cut_and_skip str count;
 
-    of Str -> Char -> Int
-    -> struct { before: Str, after: Str }
-    fun skip_until_inner str ch len;
-
-    of Str -> Char
-    -> struct { before: Str, after: Str }
+    of Str -> Char -> struct { before: Str, after: Str }
     fun split str ch;
 
     of String -> String -> Bool
@@ -22,8 +17,11 @@ export {
 }
 
 
-of Str -> Char -> Int 
--> struct { before: Str, after: Str }
+fun split str ch = {
+    assert(str.size != -1);
+    split_inner(str, ch, 0)
+};
+
 
 fun split_inner str ch len = if str.size == len then
         { .before = get_suffix(str, len), .after  = cut_prefix(str, len), }
@@ -34,26 +32,20 @@ fun split_inner str ch len = if str.size == len then
     ;
 
 
-fun split str ch = {
-    assert(str.size != -1);
-    split_inner(str, ch, 0)
-};
-
-
 fun skip_whitespace input = {
-    if input->size == 0 { return; };
+    if input->size == 0 then return ();
 
     match input->data[0] {
     |  ' ': {}
     | '\n': {}
     | '\t': {}
-    | other: { return; }
+    | other: return ()
     };
 
     input->data = input->data + 1;
     input->size = input->size - 1;
 
-    skip_whitespace(input);
+    skip_whitespace(input)
 };
 
 

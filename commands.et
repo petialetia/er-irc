@@ -40,10 +40,10 @@ export {
     of String -> Maybe(IrcMessage)
     fun parseout input;
 
-    of IrcdCommand -> Unit
+    of IrcdCommand -> ()
     fun print_command cmd;
 
-    of IrcMessage -> Unit
+    of IrcMessage -> ()
     fun print_message msg;
 
 }
@@ -51,14 +51,14 @@ export {
 
 
 fun print_command cmd = match cmd {
-    | .join d: 
-        print("- Request JOIN %s\n", 
-            to_zero_terminated(d.channel))
+    | .join j:
+        print("- Request JOIN %s\n",
+            to_zero_terminated(j.channel))
 
-    | .send d: 
+    | .send s:
         print("- Request SEND '%s' to %s\n",
-            to_zero_terminated(d.message), 
-            to_zero_terminated(d.channel))
+            to_zero_terminated(s.message),
+            to_zero_terminated(s.channel))
     };
 
 
@@ -78,9 +78,7 @@ fun send_message str = match maybe_parse_word(str) {
     | .none: { print("Could not parse channel name\n"); .none }
     | .some channel: {
 
-        str = cut_prefix(str, channel.size);
-
-        skip_whitespace(&str);
+        str = cut_and_skip(str, channel.size);
 
         match maybe_parse_word(str) {
         | .none: { print("Could not parse message\n"); .none }
@@ -95,12 +93,13 @@ fun parsein input = {
     print("Input string: '%s'\n", input);
 
     of Str var str = mk_str(input);
+
     skip_whitespace(&str);
 
     match str.data[0] {
     | ':': match str.data[1] {
-        | 'j': { return join_channel(cut_and_skip(str, 2)); }
-        | 'm': { return send_message(cut_and_skip(str, 2)); }
+        | 'j': return join_channel(cut_and_skip(str, 2))
+        | 'm': return send_message(cut_and_skip(str, 2))
         | otherwise: print("Unexprected command prefix: %c", str.data[1])
         }
     | otherwise: print("Could not recongnize input string %s",
@@ -115,13 +114,13 @@ fun parsein input = {
 
 of Str -> Str -> Maybe(IrcMessage)
 fun parse_join content nick = if content.data[0] != ':' then
-        (.none)
+        .none
     else if content.data[1] != '#' then
-        (.none)
+        .none
     else match maybe_parse_word(cut_prefix(content, 2)) {
          | .some chan: .some.join { .nick = nick,
                                     .chan = chan, }
-         | otherwise: (.none)
+         | otherwise: .none
          }
     ;
 
@@ -130,9 +129,9 @@ of Str -> Str -> Maybe(IrcMessage)
 fun parse_privmsg content nick = if content.data[0] != '#' {
         print("Unknown chan or user starting from %s\n",
                 to_zero_terminated(content));
-        (.none)
+        .none
     } else match maybe_parse_word(cut_prefix(content, 1)) {
-           | .none: (.none)
+           | .none: .none
            | .some channel:
                .some.message {
                    .nick = nick,
@@ -164,7 +163,7 @@ fun parseout input = {
         content = cut_and_skip(content, 7);
 
         return if content.size <= 0 then
-            (.none)
+            .none
         else
             parse_privmsg(content, nick);
     };
@@ -175,7 +174,7 @@ fun parseout input = {
         content = cut_and_skip(content, 4);
 
         return if content.size <= 0 then
-            (.none)
+            .none
         else
             parse_join(content, nick);
     };
@@ -191,14 +190,14 @@ fun parseout input = {
         return .some.ping;
     };
 
-    (.none)
+    .none
 };
 
 
 fun print_message msg = match msg {
     | .ping: print("PING\n")
 
-    | .leave l: print("QUIT %s\n", to_zero_terminated(l.nick),)
+    | .leave l: print("QUIT %s\n", to_zero_terminated(l.nick))
 
     | .join j: print("JOIN { user: @%s, chan: #%s }\n",
             to_zero_terminated(j.nick),
@@ -210,22 +209,24 @@ fun print_message msg = match msg {
             to_zero_terminated(m.msg),)
     };
 
-# fun main argc argv = {
-#
-#
-#     var join = ":tester!~oftc@93.175.5.164 JOIN :#etude";
-#
-#     match parseout(join) {
-#     | .some msg: print_message(msg)
-#     | .none: print("Parsing join error!\n")
-#     };
-#
-#     var message = ":tester!~oftc@93.175.5.164 PRIVMSG #etude :Hello world?";
-# 
-#     match parseout(message) {
-#     | .some msg: print_message(msg)
-#     | .none: print("Parsing message error!\n")
-#     };
-# 
-#     0
-# };
+@test fun test_join = {
+    var join = ":tester!~oftc@93.175.5.164 JOIN :#etude";
+
+    assert(match parseout(join) {
+    | .some.join _: true
+    | _: false
+    });
+
+    0
+};
+
+@test fun test_message = {
+    var message = ":tester!~oftc@93.175.5.164 PRIVMSG #etude :Hello world?";
+
+    assert(match parseout(message) {
+    | .some.message m: true
+    | _: false
+    });
+
+    0
+};
