@@ -133,7 +133,7 @@ fun etude_handle rd sess = {
         match parseout(sess->bufin) {
         | .some.ping: server_ping(sess)
         | .some msg: print_message(msg)
-        | .none: print("Error parsing '%s'\n", sess->bufin)
+        | .none: print("%s", sess->bufin)
         };
     };
 

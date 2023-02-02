@@ -90,7 +90,7 @@ fun send_message str = match maybe_parse_word(str) {
 
 
 fun parsein input = {
-    print("Input string: '%s'\n", input);
+    # print("Input string: '%s'\n", input);
 
     of Str var str = mk_str(input);
 
