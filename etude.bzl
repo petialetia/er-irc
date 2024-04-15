@@ -4,7 +4,7 @@ def _etude_binary_impl(ctx):
 
     ctx.actions.run_shell(
       outputs = [out],
-      inputs = ctx.files.srcs,
+      inputs = srcs,
       command = "etc -m {} > {}".format(" ".join([f.path[:f.path.rfind(".")] for f in srcs]), out.path),
     )
 
