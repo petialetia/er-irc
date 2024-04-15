@@ -2,7 +2,7 @@ load(":etude.bzl", "etude_binary")
 
 etude_binary(
     name = "et-irc",
-    srcs = ["main.et"],
+    srcs = ["main.et", "util.et", "commands.et"],
     deps = [":util"],
 )
 

@@ -5,7 +5,7 @@ def _etude_binary_impl(ctx):
     ctx.actions.run_shell(
       outputs = [out],
       inputs = ctx.files.srcs,
-      command = "etc -m {} > {}".format(",".join([f.path[:f.path.rfind(".")] for f in srcs]), out.path),
+      command = "etc -m {} > {}".format(" ".join([f.path[:f.path.rfind(".")] for f in srcs]), out.path),
     )
 
     return [DefaultInfo(files = depset([out]))]
