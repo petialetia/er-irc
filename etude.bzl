@@ -22,7 +22,7 @@ def etude_binary(name, srcs = [], deps = [], **kwargs):
     if srcs != []:
         lib_name = name + "_lib"
 
-        etude_library(lib_name, srcs)
+        etude_library(lib_name, srcs, **kwargs)
         deps += [":" + lib_name]
 
     native.cc_binary(
