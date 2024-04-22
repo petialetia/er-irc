@@ -1,7 +1,7 @@
 def cut_extension(path):
     return path[:path.rfind(".")]
 
-def etude_library(name, srcs, **kwargs):
+def etude_library(name, srcs, deps = [], **kwargs):
     etude_rule_name = "_" + name
     lib = etude_rule_name + ".s"
 
@@ -15,7 +15,8 @@ def etude_library(name, srcs, **kwargs):
 
     native.cc_library(
         name = name,
-        srcs = [lib]
+        srcs = [lib],
+        deps = deps,
     )
 
 def etude_binary(name, srcs = [], deps = [], **kwargs):
