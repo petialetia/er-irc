@@ -7,7 +7,8 @@ cc_binary(
 
 etude_library(
     name = "main",
-    srcs = ["main.et", "util.et", "commands.et", "sys.et", "str.et", "memory.et", "parse.et", "mul.et", "maybe.et"],
+    module = "main",
+    srcs = ["main.et", "util.et", "commands.et"],
     deps = [":util"],
 )
 
