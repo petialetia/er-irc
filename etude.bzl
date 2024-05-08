@@ -1,8 +1,11 @@
 DEFAULT_STDLIB_PATH = "/usr/etude-stdlib"
 
-def etude_library(name, module, srcs, deps = [], stdlib_path = DEFAULT_STDLIB_PATH, **kwargs):
+def etude_library(name, module, additional_srcs = [], deps = [], stdlib_path = DEFAULT_STDLIB_PATH, **kwargs):
     etude_rule_name = "_" + name
     lib = etude_rule_name + ".s"
+
+    module_src = module + ".et"
+    srcs = [module_src] + additional_srcs
 
     native.genrule(
         name = etude_rule_name,
@@ -18,11 +21,11 @@ def etude_library(name, module, srcs, deps = [], stdlib_path = DEFAULT_STDLIB_PA
         deps = deps,
     )
 
-def etude_binary(name, module = "", srcs = [], deps = [], stdlib_path = DEFAULT_STDLIB_PATH, **kwargs):
-    if srcs != []:
+def etude_binary(name, module = "", additional_srcs = [], deps = [], stdlib_path = DEFAULT_STDLIB_PATH, **kwargs):
+    if module != "":
         lib_name = name + "_lib"
 
-        etude_library(lib_name, module, srcs, [], stdlib_path, **kwargs)
+        etude_library(lib_name, module, additional_srcs, [], stdlib_path, **kwargs)
         deps += [":" + lib_name]
 
     native.cc_binary(
