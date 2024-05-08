@@ -18,11 +18,11 @@ def etude_library(name, module, srcs, deps = [], stdlib_path = DEFAULT_STDLIB_PA
         deps = deps,
     )
 
-def etude_binary(name, srcs = [], deps = [], stdlib_path = DEFAULT_STDLIB_PATH, **kwargs):
+def etude_binary(name, module = "", srcs = [], deps = [], stdlib_path = DEFAULT_STDLIB_PATH, **kwargs):
     if srcs != []:
         lib_name = name + "_lib"
 
-        etude_library(lib_name, srcs, [], stdlib_path, **kwargs)
+        etude_library(lib_name, module, srcs, [], stdlib_path, **kwargs)
         deps += [":" + lib_name]
 
     native.cc_binary(
